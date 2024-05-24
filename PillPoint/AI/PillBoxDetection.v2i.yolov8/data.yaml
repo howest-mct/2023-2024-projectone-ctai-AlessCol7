@@ -1,0 +1,18 @@
+# train: ../train/images
+# val: ../valid/images
+# test: ../test/images
+
+train: /Users/alessiacolumban/Desktop/PillPoint/AI/PillBoxDetection.v2i.yolov8/train/images
+val: /Users/alessiacolumban/Desktop/PillPoint/AI/PillBoxDetection.v2i.yolov8/valid/images
+test: /Users/alessiacolumban/Desktop/PillPoint/AI/PillBoxDetection.v2i.yolov8/test/images
+
+
+nc: 1
+names: ['Pill-box']
+
+roboflow:
+  workspace: my-second-space
+  project: pillboxdetection-ahoo7
+  version: 2
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/my-second-space/pillboxdetection-ahoo7/dataset/2
