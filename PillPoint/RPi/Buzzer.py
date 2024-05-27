@@ -1,4 +1,6 @@
-from lgpio import rpi-lgpio
+# RPi/buzzer.py
+
+from lgpio import GPIO
 from time import sleep
 
 class BuzzerController:

@@ -2,9 +2,9 @@
 # val: ../valid/images
 # test: ../test/images
 
-train: /Users/alessiacolumban/Desktop/PillPoint/AI/PillBoxDetection.v2i.yolov8/train/images
-val: /Users/alessiacolumban/Desktop/PillPoint/AI/PillBoxDetection.v2i.yolov8/valid/images
-test: /Users/alessiacolumban/Desktop/PillPoint/AI/PillBoxDetection.v2i.yolov8/test/images
+train: /Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/PillBoxDetection.v2i.yolov8/train
+val: /Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/PillBoxDetection.v2i.yolov8/valid/images
+test: /Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/PillBoxDetection.v2i.yolov8/test/images
 
 
 nc: 1

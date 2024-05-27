@@ -4,6 +4,7 @@ import torch
 import torchvision.transforms as transforms
 from PIL import Image
 import datetime
+import csv
 
 # Load your trained models
 def load_model(path):
@@ -11,9 +12,9 @@ def load_model(path):
     model.eval()
     return model
 
-model_pills = load_model('/Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/PillDetection.v1i.yolov8')
-model_pillboxes = load_model('/Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/PillBoxDetection.v2i.yolov8')
-model_hands = load_model('/Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/HandsDetection')
+model_pills = load_model('model_pills.pth')
+model_pillboxes = load_model('model_pillboxes.pth')
+model_hands = load_model('model_hands.pth')
 
 # Transformations for input images
 transform = transforms.Compose([
@@ -42,8 +43,11 @@ def is_pill_taken(pills, pillboxes, hands):
 
 def log_pill_taken_event():
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    with open("pill_taken_log.txt", "a") as log_file:
-        log_file.write(f"Pill taken at {timestamp}\n")
+    log_entry = [timestamp]
+
+    with open("pill_taken_log.csv", mode="a", newline="") as log_file:
+        log_writer = csv.writer(log_file)
+        log_writer.writerow(log_entry)
 
 if __name__ == "__main__":
     image_path = 'path_to_your_image.jpg'  # Path to the image captured from the camera

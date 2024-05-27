@@ -2,7 +2,7 @@
 
 import cv2
 import time
-from Buzzer import BuzzerController  # Your buzzer control code
+from Buzzer import BuzzerController
 from AI.app import detect_objects, is_pill_taken, log_pill_taken_event
 
 def capture_image():
@@ -18,13 +18,16 @@ def capture_image():
         raise RuntimeError("Failed to capture image")
 
 def main():
+    buzzer = BuzzerController()
     while True:
         try:
             image_path = capture_image()
             pills, pillboxes, hands = detect_objects(image_path)
             
             if is_pill_taken(pills, pillboxes, hands):
-                BuzzerController()  # Sound the buzzer
+                buzzer.start()  # Sound the buzzer
+                time.sleep(1)  # Buzzer duration
+                buzzer.stop()
                 log_pill_taken_event()
             
             time.sleep(60)  # Check every minute
