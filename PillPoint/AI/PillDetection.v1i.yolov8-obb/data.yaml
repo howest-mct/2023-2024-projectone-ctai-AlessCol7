@@ -1,8 +1,0 @@
-path: ../datasets/roboflow
-
-train: /Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/PillDetection.v1i.yolov8-obb/train/images
-val: /Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/PillBoxDetection.v2i.yolov8/valid/images
-test: /Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/PillDetection.v1i.yolov8-obb/test/images
-
-names: 
-  0: Pill
