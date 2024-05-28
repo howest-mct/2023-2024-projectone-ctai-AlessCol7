@@ -1,21 +1,4 @@
-import threading
-import queue
-
-# Bluez gatt uart service (SERVER)
-from bluetooth_uart_server.bluetooth_uart_server import ble_gatt_uart_loop
-
-# extend this code so the value received via Bluetooth gets printed on the LCD
-# (maybe together with you Bluetooth device name or Bluetooth MAC?)
-
-def main():
-    i = 0
-    rx_q = queue.Queue()
-    tx_q = queue.Queue()
-    device_name = "alesscol-pi-gatt-uart" # TODO: replace with your own (unique) device name
-    threading.Thread(target=ble_gatt_uart_loop, args=(rx_q, tx_q, device_name), daemon=True).start()
-    while True:
-        try:
-            incoming = rx_q.get(timeout=1) # # import threading
+# import threading
 # import queue
 
 # # Bluez gatt uart service (SERVER)
@@ -153,34 +136,17 @@ def main():
     lcd_init()
     while True:
         try:
-            incoming = rx_q.get(timeout=1)  # Wait for up to 1 second 
+            incoming = rx_q.get(timeout=1) # Wait for up to 1 second 
             if incoming:
-                # print("In main loop: {}".format(incoming))
-                # Display the received message on the LCD
-                # lcd_init()
-                lcd_string1(f"In main loop {incoming}")
-                lcd_string2(f"D8:3A:DD:E1:55:CB")
+                print("In main loop: {}".format(incoming))
         except Exception as e:
-            pass  # nothing in Q 
+            pass # nothing in Q 
 
         # Uncomment if you want to send data periodically
         # if i % 5 == 0:  # Send some data every 5 iterations
         #     tx_q.put("test{}".format(i))
         # i += 1
 
-if __name__ == '__main__':
-    main()
-
-
-    # Wait for up to 1 second 
-    #             if incoming:
-    #                 print("In main loop: {}".format(incoming))
-    #         except Exception as e:
-    #             pass # nothing in Q 
-
-        # if i%5 == 0: # Send some data every 5 iterations
-        #     tx_q.put("test{}".format(i))
-        # i += 1
 if __name__ == '__main__':
     main()
 
