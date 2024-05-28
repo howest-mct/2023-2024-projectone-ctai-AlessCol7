@@ -23,8 +23,8 @@ label_annotator = sv.LabelAnnotator()
 tx_q = Queue()
 rx_q = Queue()
 
-targetDeviceName=None
-targetDeviceMac="D8:3A:DD:B8:9E:86"
+targetDeviceName="alesscol-pi-gatt-uart"
+targetDeviceMac=None #"D8:3A:DD:E1:55:CB"
 
 def init_ble_thread():
     # Creating a new thread for running a function 'run' with specified arguments.
@@ -127,4 +127,3 @@ if __name__ == '__main__':
     time.sleep(1) # little breathing room for BLE to start
     print("launching GradIO interface")
     interface_video.launch()
-    
