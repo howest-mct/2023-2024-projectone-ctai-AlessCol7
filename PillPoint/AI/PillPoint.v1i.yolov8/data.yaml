@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 3
+names: ['Hands', 'Pill', 'PillBox']
+
+roboflow:
+  workspace: pillpoint
+  project: pillpoint
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/pillpoint/pillpoint/dataset/1
