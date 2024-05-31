@@ -1,9 +1,9 @@
-# Project Title
+# Project Title : PillPoint
 
-**FIRST & LAST NAME:** A B
+**FIRST & LAST NAME:** Alessia Columban
 
-**Sparring Partner:** C D
+**Sparring Partner:** Robin De Meyer
 
-**Project Summary in max 10 words:** E
+**Project Summary in max 10 words:** Smart PillBox that tells when the wrong pill is taken
 
-**Project Title:** F
+**Project Title:** PillPoint
