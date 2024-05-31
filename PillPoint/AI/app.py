@@ -1,57 +1,71 @@
-# AI/app.py
+import cv2
+from ultralytics import YOLO
 
-import torch
-import torchvision.transforms as transforms
-from PIL import Image
-import datetime
-import csv
+# Print camera properties for debugging
+def print_camera_properties(cap):
+    width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
+    fourcc_str = "".join([chr((fourcc >> 8 * i) & 0xFF) for i in range(4)]) if fourcc != 0 else "Unknown"
+    print(f"Frame width: {width}")
+    print(f"Frame height: {height}")
+    print(f"FPS: {fps}")
+    print(f"FourCC: {fourcc_str}")
 
-# Load your trained models
-def load_model(path):
-    model = torch.load(path)
-    model.eval()
-    return model
+# Load the custom YOLOv8 model
+model = YOLO('runs/detect/train2/weights/best.pt')
 
-model_pills = load_model('model_pills.pth')
-model_pillboxes = load_model('model_pillboxes.pth')
-model_hands = load_model('model_hands.pth')
+# Try different indices and backends to ensure the correct webcam is used
+backends = [cv2.CAP_ANY, cv2.CAP_DSHOW, cv2.CAP_V4L2]
+successful_open = False
 
-# Transformations for input images
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-])
+for index in range(5):  # Try more indices
+    for backend in backends:
+        cap = cv2.VideoCapture(index, backend)
+        if cap.isOpened():
+            print(f"Successfully opened webcam with index {index} and backend {backend}")
+            print_camera_properties(cap)  # Print camera properties
+            successful_open = True
+            break
+    if successful_open:
+        break
+else:
+    print("Error: Could not open any webcam.")
+    exit()
 
-def detect_objects(image_path):
-    image = Image.open(image_path)
-    image = transform(image).unsqueeze(0)  # Add batch dimension
+# Main loop for capturing frames and performing inference
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        print("Failed to grab frame")
+        break
 
-    # Perform inference with each model
-    pills_detected = model_pills(image)
-    pillboxes_detected = model_pillboxes(image)
-    hands_detected = model_hands(image)
-    
-    return pills_detected, pillboxes_detected, hands_detected
+    # Perform inference
+    results = model(frame)
 
-def is_pill_taken(pills, pillboxes, hands):
-    # Implement your logic to determine if a pill is taken
-    # This is a placeholder function and needs proper logic based on model outputs
-    pill_taken = False
-    if hands and pillboxes:  # Simple logic: if hand and pillbox detected
-        pill_taken = True
-    return pill_taken
+    # Display the results on the frame
+    for result in results:
+        for box in result.boxes:
+            coords = box.xyxy[0].tolist()
+            if len(coords) == 4:
+                x1, y1, x2, y2 = map(int, coords)
+                conf = box.conf[0]
+                cls = box.cls[0]
+                class_name = model.names[int(cls)]
+                label = f'{class_name} {conf:.2f}'
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            else:
+                print("Unexpected coordinates format:", coords)
 
-def log_pill_taken_event():
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    log_entry = [timestamp]
+    # Display the frame
+    cv2.imshow('Webcam Detection', frame)
 
-    with open("pill_taken_log.csv", mode="a", newline="") as log_file:
-        log_writer = csv.writer(log_file)
-        log_writer.writerow(log_entry)
+    # Break the loop on 'q' key press
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
-if __name__ == "__main__":
-    image_path = 'path_to_your_image.jpg'  # Path to the image captured from the camera
-    pills, pillboxes, hands = detect_objects(image_path)
-    
-    if is_pill_taken(pills, pillboxes, hands):
-        log_pill_taken_event()
+# Release the webcam and close windows
+cap.release()
+cv2.destroyAllWindows()
