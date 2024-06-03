@@ -1,61 +1,105 @@
-import cv2
-import time
-import queue
+import socket
 import threading
-from Buzzer import BuzzerController
-from AI.app import detect_objects, is_pill_taken, log_pill_taken_event
-from bluetooth_uart_server.bluetooth_uart_server import ble_gatt_uart_loop
+import time
+from time import sleep
+from RPi import GPIO
+from Classes.Buzzer import BuzzerController
+from Classes.LCD import LCD
+from subprocess import check_output
 
-def ble_gatt_uart_loop(rx_q, tx_q, device_name):
-    # BLE GATT UART loop code here
-    i = 0
-    rx_q = queue.Queue()
-    tx_q = queue.Queue()
-    device_name = "AlessCol-pi-gatt-uart" # replace with your own (unique) device name
-    threading.Thread(target=ble_gatt_uart_loop, args=(rx_q, tx_q, device_name), daemon=True).start()
-    while True:
+# Global vars for use in methods/threads
+client_socket = None
+server_socket = None
+server_thread = None
+shutdown_flag = threading.Event()
+
+# GPIO setup
+BUZZER_PIN = 12
+I2C_ADDR = 0x27
+
+def setup_socket_server():
+    global server_socket, server_thread, shutdown_flag
+    # Socket setup
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Create a socket instance
+    server_socket.bind(('0.0.0.0', 1442))  # Bind on all available IPs (WiFi and LAN), on port 1441
+    server_socket.settimeout(0.2)  # Timeout for listening, needed for loop in thread, otherwise it's blocking
+    server_socket.listen(1)  # Enable "listening" for requests/connections
+
+    # Start the server thread
+    server_thread = threading.Thread(target=accept_connections, args=(shutdown_flag,), daemon=True)
+    server_thread.start()
+
+def accept_connections(shutdown_flag):
+    global client_socket
+    print("Accepting connections")
+    while not shutdown_flag.is_set():  # As long as ctrl+c is not pressed
         try:
-            incoming = rx_q.get(timeout=1) # Wait for up to 1 second 
-            if incoming:
-                print("In main loop: {}".format(incoming))
-        except Exception as e:
-            pass # nothing in Q 
-    
+            client_socket, addr = server_socket.accept()  # Accept incoming requests, and return a reference to the client and its IP
+            print("Connected by", addr)
+            client_thread = threading.Thread(target=handle_client, args=(client_socket, shutdown_flag,))
+            client_thread.start()
+        except socket.timeout:  # Ignore timeout errors
+            pass
 
-def capture_image():
-    vid = cv2.VideoCapture(0)
-    ret, frame = vid.read()
-    if ret:
-        image_path = '/home/pi/images/pill_image.jpg'
-        cv2.imwrite(image_path, frame)
-        vid.release()
-        return image_path
-    else:
-        vid.release()
-        raise RuntimeError("Failed to capture image")
+def handle_client(sock, shutdown_flag):
+    try:
+        while not shutdown_flag.is_set():  # As long as ctrl+c is not pressed
+            data = sock.recv(1024)  # Try to receive 1024 bytes of data (maximum amount; can be less)
+            if not data:  # When no data is received, try again (and shutdown flag is checked again)
+                break
+            message = data.decode()
+            print("Received from client:", message)
+            if message == "Wrong pill detected":
+                activate_buzzer()
+    except socket.timeout:  # Capture the timeouts
+        pass
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        sock.close()
 
-def main():
-    buzzer = BuzzerController()
+def activate_buzzer():
+    try:
+        buzzer.start()
+        sleep(0.3)
+        buzzer.stop()
+    except Exception as e:
+        print(f"Failed to activate buzzer: {e}")
+
+def getIp():
+    ips = str(check_output(['hostname', '--all-ip-addresses']))
+    ips = ips[2:len(ips)-4]
+    ips = ips.split(" ")
+    return ips
+
+###### MAIN PART ######
+try:
+    #class initialization
+    buzzer = BuzzerController(pin=BUZZER_PIN)
+    lcd = LCD(I2C_ADDR)
+
+    #get ip displaying
+    ip = getIp()
+    #lcd.send_string('IP adress:', 1)
+    lcd.send_string(ip[0],1)
+    lcd.send_string(ip[1],2)
+    #print(ip)
+
+    #run socket server
+    setup_socket_server()
     while True:
-        try:
-            image_path = capture_image()
-            pills, pillboxes, hands = detect_objects(image_path)
-            
-            if is_pill_taken(pills, pillboxes, hands):
-                buzzer.start()  # Sound the buzzer
-                time.sleep(1)  # Buzzer duration
-                buzzer.stop()
-                log_pill_taken_event()
-            
-            time.sleep(60)  # Check every minute
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            time.sleep(60)  # Wait a minute before trying again
+        time.sleep(10)
 
-if __name__ == '__main__':
-    i = 0
-    rx_q = queue.Queue()
-    tx_q = queue.Queue()
-    device_name = "AlessCol-pi-gatt-uart"
-    threading.Thread(target=ble_gatt_uart_loop, args=(rx_q, tx_q, device_name), daemon=True).start()
-    main()
+except KeyboardInterrupt:
+    print("Server shutting down")
+    shutdown_flag.set()  # Set the shutdown flag
+finally:
+    server_thread.join()  # Join the thread, so we wait for it to finish (graceful exit)
+    if server_socket:
+        server_socket.close()  # Make sure to close any open connections
+    if buzzer:
+        buzzer.stop()
+        buzzer.cleanup()
+    if lcd:
+        lcd.cleanup()
+    # GPIO.cleanup()
