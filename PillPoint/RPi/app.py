@@ -60,9 +60,7 @@ def handle_client(sock, shutdown_flag):
 
 def activate_buzzer():
     try:
-        buzzer.start()
-        sleep(0.3)
-        buzzer.stop()
+        buzzer.bad_notification()
     except Exception as e:
         print(f"Failed to activate buzzer: {e}")
 
@@ -98,7 +96,6 @@ finally:
     if server_socket:
         server_socket.close()  # Make sure to close any open connections
     if buzzer:
-        buzzer.stop()
         buzzer.cleanup()
     if lcd:
         lcd.cleanup()

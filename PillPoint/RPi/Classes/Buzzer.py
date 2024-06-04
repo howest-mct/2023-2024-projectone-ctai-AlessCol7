@@ -19,4 +19,23 @@ class BuzzerController:
         self.buzzer_pwm.stop()
 
     def cleanup(self):
+        self.stop()
         GPIO.cleanup(self.pin)
+
+    def bad_notification(self):
+        for freq in (500,400,500):
+            self.start()
+            self.change_frequency(freq)
+            print(f'playing {freq}')
+            sleep(0.8)
+        self.stop()
+
+# if __name__ == "__main__":
+#     buzzer = BuzzerController(pin=12)
+#     try:
+#         buzzer.bad_notification()
+
+#     finally:
+#         buzzer.cleanup()
+
+
