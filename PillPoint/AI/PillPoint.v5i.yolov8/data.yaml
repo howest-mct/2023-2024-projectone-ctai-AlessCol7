@@ -1,0 +1,13 @@
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 18
+names: ['FRI-am', 'FRI-pm', 'Hands', 'MON-am', 'MON-pm', 'Open', 'Pill', 'PillBox', 'SAT-am', 'SAT-pm', 'SUN-am', 'SUN-pm', 'THU-am', 'THU-pm', 'TUE-am', 'TUE-pm', 'WED-am', 'WED-pm']
+
+roboflow:
+  workspace: pillpoint
+  project: pillpoint
+  version: 5
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/pillpoint/pillpoint/dataset/5
