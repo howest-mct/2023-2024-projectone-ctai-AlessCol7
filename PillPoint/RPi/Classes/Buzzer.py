@@ -22,13 +22,32 @@ class BuzzerController:
         self.stop()
         GPIO.cleanup(self.pin)
 
+    # def bad_notification(self):
+    #     for freq in (500,400,500):
+    #         self.start()
+    #         self.change_frequency(freq)
+    #         print(f'playing {freq}')
+    #         sleep(0.8)
+    #     self.stop()
     def bad_notification(self):
-        for freq in (500,400,500):
+        print("Bad notification initiated")
+        # Define a sequence of musical notes
+        notes = [
+            (440, 0.5),  # A4
+            (493, 0.5),  # B4
+            # (523, 0.5),  # C5
+            # (587, 0.5),  # D5
+            # (659, 0.5),  # E5
+            # (698, 0.5),  # F5
+            # (784, 0.5)   # G5
+        ]
+        for freq, duration in notes:
             self.start()
             self.change_frequency(freq)
             print(f'playing {freq}')
-            sleep(0.8)
+            sleep(duration)
         self.stop()
+        print("Bad notification completed")
 
 # if __name__ == "__main__":
 #     buzzer = BuzzerController(pin=12)
