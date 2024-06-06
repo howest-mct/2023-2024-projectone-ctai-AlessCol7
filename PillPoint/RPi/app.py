@@ -438,7 +438,7 @@ def setup_socket_server():
     global server_socket, server_thread, shutdown_flag
     # Socket setup
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Create a socket instance
-    server_socket.bind(('0.0.0.0', 1444))  # Bind on all available IPs (WiFi and LAN), on port 1442
+    server_socket.bind(('0.0.0.0', 1443))  # Bind on all available IPs (WiFi and LAN), on port 1442
     server_socket.settimeout(0.2)  # Timeout for listening, needed for loop in thread, otherwise it's blocking
     server_socket.listen(1)  # Enable "listening" for requests/connections
 

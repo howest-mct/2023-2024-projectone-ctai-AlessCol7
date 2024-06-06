@@ -40,6 +40,10 @@ class BuzzerController:
             (659, 0.5),  # E5
             (698, 0.5),  # F5
             (784, 0.5)   # G5
+            # (523, 0.2),  # C5
+            # (466, 0.2),  # Bb4
+            # (392, 0.3),  # G4
+            # (349, 0.3)   # F4
         ]
         for freq, duration in notes:
             self.start()
