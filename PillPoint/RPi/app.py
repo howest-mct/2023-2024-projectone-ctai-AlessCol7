@@ -314,7 +314,7 @@ def setup_socket_server():
    global server_socket, server_thread, shutdown_flag
    # Socket setup
    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Create a socket instance
-   server_socket.bind(('0.0.0.0', 1441))  # Bind on all available IPs (WiFi and LAN), on port 1442
+   server_socket.bind(('0.0.0.0', 1443))  # Bind on all available IPs (WiFi and LAN), on port 1442
    server_socket.settimeout(0.2)  # Timeout for listening, needed for loop in thread, otherwise it's blocking
    server_socket.listen(1)  # Enable "listening" for requests/connections
 
@@ -337,7 +337,10 @@ def accept_connections(shutdown_flag):
 def handle_client(sock, shutdown_flag):
    try:
        while not shutdown_flag.is_set():  # As long as ctrl+c is not pressed
-           current_time = datetime.now().strftime('%a-%p')
+           current_time = datetime.now().strftime('%a-%p').upper()
+           day, part = current_time.split("-")
+           current_time = f"{day}-{part.lower()}"
+
            sock.send(current_time.encode())  # Send current day and time to AI part
            data = sock.recv(1024)  # Try to receive 1024 bytes of data (maximum amount; can be less)
            if not data:  # When no data is received, try again (and shutdown flag is checked again)
