@@ -35,7 +35,7 @@ def suppress_stdout():
 # Load the trained YOLOv8 model
 try:
     with suppress_stdout():
-        model = YOLO('/Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/PillPoint.v5i.yolov8/runs/detect/train/weights/best.pt')
+        model = YOLO('/Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/PillPoint.v6i.yolov8/runs/detect/train3/weights/best.pt')
 except Exception as e:
     print(f"Error loading model: {e}")
     exit()
@@ -134,7 +134,7 @@ def draw_bounding_boxes(image, results):
         label = class_names[cls]
         if label in day_time_slots:
             detected_labels.append(label)  # Append the detected label to the list
-        
+
         color = class_colors.get(label, (0, 0, 255))  # Default to blue if not found
         
         cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
@@ -145,7 +145,11 @@ def draw_bounding_boxes(image, results):
 
         if label == 'Open':
             compartment_open_detected = True
-
+            
+        # # Check if the open compartment matches the expected compartment
+        # if label == ' Open' and current_day_time not in:
+        #     print(f"Expected: {current_day_time}, Detected: {label}")
+        #     wrong_compartment_opened = True
 
     missing_labels = find_missing_labels(day_time_slots, detected_labels)
             
@@ -168,9 +172,10 @@ def draw_bounding_boxes(image, results):
         # Update the last debug time
         last_debug_time = time.time()
 
-    if (compartment_open_detected == True and wrong_compartment_opened == True and len(detected_labels) >= 5):
+
+    if (compartment_open_detected == True and wrong_compartment_opened == True and len(detected_labels) >= 10):
         send_buzzer_notification()
-    elif (compartment_open_detected == True and wrong_compartment_opened == False and len(detected_labels) >= 5):
+    elif (compartment_open_detected == True and wrong_compartment_opened == False and len(detected_labels) >= 10):
         send_green_notification()
 
 def find_missing_labels(day_time_slots, detected_labels):
@@ -192,6 +197,7 @@ def find_missing_labels(day_time_slots, detected_labels):
         if label not in day_time_slots:
             missing_labels.append(label)
     return missing_labels
+
 
 def send_buzzer_notification():
     global client_socket

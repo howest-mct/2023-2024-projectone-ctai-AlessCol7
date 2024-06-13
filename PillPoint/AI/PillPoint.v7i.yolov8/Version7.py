@@ -35,7 +35,7 @@ def suppress_stdout():
 # Load the trained YOLOv8 model
 try:
     with suppress_stdout():
-        model = YOLO('/Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/PillPoint.v5i.yolov8/runs/detect/train/weights/best.pt')
+        model = YOLO('/Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/PillPoint.v7i.yolov8/runs/detect/train/weights/best.pt')
 except Exception as e:
     print(f"Error loading model: {e}")
     exit()
@@ -78,6 +78,7 @@ shutdown_flag = threading.Event()
 last_debug_time = time.time()
 debug_interval = 2
 current_day_time = None
+detected_labels_and_locations_stack = []
 
 def setup_socket_client():
     global client_socket, receive_thread
@@ -115,47 +116,104 @@ def request_date_time():
     except Exception as e:
         print(f"Failed to request date and time: {e}")
 
-# Function to draw bounding boxes with different colors
-def draw_bounding_boxes(image, results):
-    global last_debug_time, current_day_time
+def group_results(results):
+    def __get_distance(a, b):
+        return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
+    
     boxes = results[0].boxes.xyxy.cpu().numpy()
     confs = results[0].boxes.conf.cpu().numpy()
     classes = results[0].boxes.cls.cpu().numpy()
-    
+    zips = [(box, conf, class_name) for box, conf, class_name in zip(boxes, confs, classes) if conf > 0.5]
+    detected_labels_and_locations = []  # Initialize an empty list to store detected labels and their locations (label, center_x, center_y, (width, height))
+    threshold = 200
+
+    for i, result in enumerate(zips):
+        x1, y1, x2, y2 = map(int, result[0])
+        conf = result[1]
+        cls = int(result[2])
+        label = class_names[cls]
+        if label in day_time_slots:
+            detected_labels_and_locations.append((label, (x1 + x2) / 2, (y1 + y2) / 2, x2 - x1, y2 - y1, conf))  # Append the label and its location to the list
+
+    current_smooth = []
+    for group in detected_labels_and_locations_stack:
+        average_x = sum(x for _, x, _, _, _, _ in group) / len(group)
+        average_y = sum(y for _, _, y, _, _, _ in group) / len(group)
+        current_smooth.append((average_x, average_y))
+
+    for label, x, y, width, height, conf in detected_labels_and_locations:
+        closest = None
+        closest_index = None
+        for i, (x2, y2) in enumerate(current_smooth):
+            current_distance = __get_distance((x, y), (x2, y2))
+            if closest is None or current_distance < closest:
+                closest = current_distance
+                closest_index = i
+        result = (label, x, y, width, height, conf)
+        if closest is not None and closest < threshold:
+            detected_labels_and_locations_stack[closest_index].append(result)
+            current_smooth.pop(closest_index)
+        else:
+            detected_labels_and_locations_stack.append([result])
+
+    for group in detected_labels_and_locations_stack:
+        # remove worst result by confidence or result contradicting most results
+        if len(group) > 30:
+            group.pop(0)
+
+# Function to draw bounding boxes with different colors
+def draw_bounding_boxes(image, results):
+    global last_debug_time, current_day_time
+    group_results(results)
     pillbox_detected = False
     compartment_open_detected = False
     wrong_compartment_opened = False
-    detected_labels = []  # Initialize an empty list to store detected labels
+    detected_labels = []
 
-    for i, box in enumerate(boxes):
-        x1, y1, x2, y2 = map(int, box)
-        conf = confs[i]
-        cls = int(classes[i])
-        label = class_names[cls]
-        if label in day_time_slots:
-            detected_labels.append(label)  # Append the detected label to the list
-        
+    smoothed_results = []
+    for group in detected_labels_and_locations_stack:
+        labels = set(label for label, _, _, _, _, _ in group)
+        confidence = {}
+        for label in labels:
+            this_labels = [(l, conf) for l, _, _, _, _, conf in group if label == l]
+            confidence[label] = sum([conf for _, conf in this_labels]) / len(this_labels)
+
+        best_label = max(confidence.items(), key=lambda x: x[1])
+        average_x = sum(x for _, x, _, _, _, _ in group) / len(group)
+        average_y = sum(y for _, _, y, _, _, _ in group) / len(group)
+        average_width = sum(width for _, _, _, width, _, _ in group) / len(group)
+        average_height = sum(height for _, _, _, _, height, _ in group) / len(group)
+        smoothed_results.append((best_label[0], best_label[1], average_x - average_width / 2, average_y - average_height / 2, average_x + average_width / 2, average_y + average_height / 2))
+
+    duplicates = []
+    for label in set(label for label, _, _, _, _, _ in smoothed_results):
+        label_group = [(i, result) for i, result in enumerate(smoothed_results) if result[0] == label]
+
+        best = max(label_group, key=lambda x: x[1][1])
+        duplicates += [i for i, result in label_group if result[1] < best[1][1]]
+    
+    for duplicate_id in duplicates:
+        smoothed_results[duplicate_id] = None
+
+    smoothed_results = [result for result in smoothed_results if result]    
+
+    for label, _, x1, y1, x2, y2 in smoothed_results:
+        x1 = int(x1)
+        y1 = int(y1)
+        x2 = int(x2)
+        y2 = int(y2)
+
         color = class_colors.get(label, (0, 0, 255))  # Default to blue if not found
         
         cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
-        cv2.putText(image, f'{label} {confs[i]:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+        cv2.putText(image, f'{label}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
         
         if label == 'PillBox':
             pillbox_detected = True
 
         if label == 'Open':
             compartment_open_detected = True
-
-
-    missing_labels = find_missing_labels(day_time_slots, detected_labels)
             
-    if compartment_open_detected == True:
-        if current_day_time not in missing_labels:
-            wrong_compartment_opened = True
-        else :
-            wrong_compartment_opened = False
-
-        
     # Check if it's time to print debug statements
     if last_debug_time + debug_interval < time.time():
         # Debug statements to verify logic
@@ -164,13 +222,12 @@ def draw_bounding_boxes(image, results):
         print(f"Compartment Open Detected: {compartment_open_detected}")
         print(f"Wrong Compartment Opened: {wrong_compartment_opened}")
         print(f"Detected Labels: {detected_labels}")
-        print(f"Missing Labels: {missing_labels}")
         # Update the last debug time
         last_debug_time = time.time()
 
-    if (compartment_open_detected == True and wrong_compartment_opened == True and len(detected_labels) >= 5):
+    if (compartment_open_detected == True and wrong_compartment_opened == True and len(detected_labels) >= 10):
         send_buzzer_notification()
-    elif (compartment_open_detected == True and wrong_compartment_opened == False and len(detected_labels) >= 5):
+    elif (compartment_open_detected == True and wrong_compartment_opened == False and len(detected_labels) >= 10):
         send_green_notification()
 
 def find_missing_labels(day_time_slots, detected_labels):
