@@ -35,7 +35,7 @@ def suppress_stdout():
 # Load the trained YOLOv8 model
 try:
     with suppress_stdout():
-        model = YOLO('/Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/PillPoint.v5i.yolov8/runs/detect/train/weights/best.pt')
+        model = YOLO('/Users/alessiacolumban/Desktop/2023-2024-projectone-ctai-AlessCol7/PillPoint/AI/PillPoint.v5i.yolov8/runs/detect/train2/weights/best.pt')
 except Exception as e:
     print(f"Error loading model: {e}")
     exit()

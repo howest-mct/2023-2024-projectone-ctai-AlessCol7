@@ -40,7 +40,7 @@ except Exception as e:
     print(f"Error loading model: {e}")
     exit()
 
-# Define the class names
+# Define the class names for the object detection model
 class_names = ['FRI-am', 'FRI-pm', 'Hands', 'MON-am', 'MON-pm', 'Open', 'Pill', 'PillBox', 'SAT-am', 'SAT-pm', 'SUN-am', 'SUN-pm', 'THU-am', 'THU-pm', 'TUE-am', 'TUE-pm', 'WED-am', 'WED-pm']
 
 # Define the day and time slots for the pillbox compartments
@@ -90,6 +90,7 @@ def setup_socket_client():
     receive_thread = threading.Thread(target=receive_messages, args=(client_socket, shutdown_flag))
     receive_thread.start()
 
+# Function to receive messages from the server
 def receive_messages(sock, shutdown_flag):
     global current_day_time
     sock.settimeout(1)  # Set a timeout on the socket so we can check shutdown_flag.is_set in the loop, instead of blocking
@@ -109,6 +110,7 @@ def receive_messages(sock, shutdown_flag):
     finally:
         sock.close()
 
+# Function to group detection results based on proximity and smooth them over time
 def request_date_time():
     global client_socket
     try:
@@ -116,6 +118,7 @@ def request_date_time():
     except Exception as e:
         print(f"Failed to request date and time: {e}")
 
+# Function to group detection results based on proximity and smooth them over time
 def group_results(results):
     def __get_distance(a, b):
         return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
